@@ -1,0 +1,5 @@
+rootProject.name = 'messaging-app'
+
+include 'messaging-proto'   // gRPC contract (.proto) shared by both services
+include 'message-server'    // gRPC server: stores and serves messages (own database)
+include 'chat-api'          // REST web service: users & conversations (own database), gRPC client
