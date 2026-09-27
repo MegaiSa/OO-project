@@ -1,0 +1,56 @@
+# Starts the whole application: 2 services, each with its own PostgreSQL database.
+#   docker compose up --build
+services:
+  message-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: messages
+      POSTGRES_USER: messaging
+      POSTGRES_PASSWORD: messaging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U messaging -d messages"]
+      interval: 5s
+      retries: 10
+
+  chat-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: chat
+      POSTGRES_USER: messaging
+      POSTGRES_PASSWORD: messaging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U messaging -d chat"]
+      interval: 5s
+      retries: 10
+
+  message-server:
+    build:
+      context: .
+      args:
+        SERVICE: message-server
+    environment:
+      DB_URL: jdbc:postgresql://message-db:5432/messages
+      DB_USER: messaging
+      DB_PASSWORD: messaging
+    depends_on:
+      message-db:
+        condition: service_healthy
+    # no published port: only chat-api talks to it (gRPC, internal network)
+
+  chat-api:
+    build:
+      context: .
+      args:
+        SERVICE: chat-api
+    environment:
+      DB_URL: jdbc:postgresql://chat-db:5432/chat
+      DB_USER: messaging
+      DB_PASSWORD: messaging
+      MESSAGE_SERVER_ADDRESS: static://message-server:9090
+    ports:
+      - "8080:8080"
+    depends_on:
+      chat-db:
+        condition: service_healthy
+      message-server:
+        condition: service_started
