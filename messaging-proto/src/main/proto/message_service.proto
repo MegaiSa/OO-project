@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "fr.efrei.messaging.grpc";
+option java_outer_classname = "MessageServiceProto";
+
+package messaging;
+
+// Contract between chat-api (gRPC client) and message-server (gRPC server).
+service MessageService {
+  // Unary call: one request -> one response.
+  rpc SendMessage (SendMessageRequest) returns (MessageReply) {}
+
+  // Server streaming: one request -> a stream of messages (conversation history).
+  rpc GetHistory (HistoryRequest) returns (stream MessageReply) {}
+
+  // Unary call: number of messages in a conversation.
+  rpc CountMessages (HistoryRequest) returns (CountReply) {}
+}
+
+message SendMessageRequest {
+  int64 conversation_id = 1;
+  int64 sender_id = 2;
+  string content = 3;
+}
+
+message HistoryRequest {
+  int64 conversation_id = 1;
+}
+
+message MessageReply {
+  int64 id = 1;
+  int64 conversation_id = 2;
+  int64 sender_id = 3;
+  string content = 4;
+  int64 sent_at = 5; // epoch milliseconds
+}
+
+message CountReply {
+  int64 count = 1;
+}
